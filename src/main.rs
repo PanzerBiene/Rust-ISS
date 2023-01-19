@@ -1,39 +1,29 @@
-use druid::widget::{Align, Flex, TextBox};
-use druid::{AppLauncher, Data, Lens, LocalizedString, Widget, WindowDesc, WidgetExt};
+use druid::widget::{Align, Label, Flex, TextBox};
+use druid::{AppLauncher, Data, Lens, Env, LocalizedString, Widget, WindowDesc, WidgetExt};
+use reqwest;
+use serde_json::{Value};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 const TEXT_BOX_WIDTH: f64 = 200.0;
-const WINDOW_TITLE: LocalizedString<AppState> = LocalizedString::new("Rust ISS");
-
-#[derive(Clone, Data, Lens)]
-struct AppState {
-    name: String,
-}
 
 fn main() {
     //main Window 
     let main_window = WindowDesc::new(build_root_widget)
-        .title(WINDOW_TITLE)
+        .title("Rust-ISS")
         .window_size((400.0, 400.0));
-
-    //inital app state 
-    let initial_state = AppState {
-        name: "".into(),
-    };
 
     //start application
     AppLauncher::with_window(main_window)
-        .launch(initial_state)
+        .launch("".to_owned())
         .expect("Failed to launch Rust ISS");
 }
 
-fn build_root_widget() -> impl Widget<AppState> {
+fn build_root_widget() -> impl Widget<String> {
 
     //textbox
     let textbox = TextBox::new()
-        .with_placeholder("")
-        .fix_width(TEXT_BOX_WIDTH)
-        .lens(AppState::name);
+        .with_placeholder("ISS Location")
+        .fix_width(TEXT_BOX_WIDTH);
 
     //widget layout
     let layout = Flex::column()
@@ -42,4 +32,29 @@ fn build_root_widget() -> impl Widget<AppState> {
 
     //center 2 widgets in with_space 
     Align::centered(layout)
+}
+
+async fn get_pos() -> Value {
+    let url = "http://api.open-notify.org/iss-now.json";
+    let client = reqwest::Client::new();
+    let response = client.get(url)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await;
+
+    let output: Value;
+    match response {
+        Ok(json) => {
+           output = serde_json::from_str(&json).unwrap(); 
+        }
+        Err(e) => {
+            output = Value::Null;
+            println!("{:?}", e);
+        }
+    }
+
+    return output;
+
 }
