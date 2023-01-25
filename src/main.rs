@@ -1,14 +1,28 @@
 use reqwest;
 use serde_json::{Value};
+use std::{thread, time};
 
 #[tokio::main]
 async fn main() {
-    get_pos().await;
+    let client = reqwest::Client::new();
+    let mut pos: Value;
+    let mut i = 5;
+    //set sleep_duration to 1 second
+    let sleep_duration = time::Duration::from_millis(1000);
+
+    while i > 0 {
+        //get position
+        pos = get_pos(&client).await;
+        println!("Latitude: {:?} Longitude: {:?}", pos["iss_position"]["latitude"].as_str().unwrap(), pos["iss_position"]["longitude"].as_str().unwrap());
+        i-=1;
+        //sleep for 1 second
+        thread::sleep(sleep_duration);
+    }
 }
 
-async fn get_pos()  {
+//gets the value returned from calling the open-notify api
+async fn get_pos(client: &reqwest::Client) -> Value {
     let url = "http://api.open-notify.org/iss-now.json";
-    let client = reqwest::Client::new();
     let response = client.get(url)
         .send()
         .await
@@ -19,13 +33,14 @@ async fn get_pos()  {
     let output: Value;
     match response {
         Ok(json) => {
-           output = serde_json::from_str(&json).unwrap(); 
-           println!("{:?}", output)
+            output = serde_json::from_str(&json).unwrap(); 
         }
         Err(e) => {
+            output = Value::Null;
             println!("{:?}", e);
         }
     }
 
+    return output;
 
 }
