@@ -1,13 +1,7 @@
 use reqwest;
 use serde_json::{Value};
 use std::{thread, time};
-
-// TODO
-// seperate matching response into seperate function
-// add colored output
-// get people by space craft
-// allow user to specify a spacecraft
-// get closest country (maybe)
+use colored::*;
 
 #[tokio::main]
 async fn main() {
@@ -17,12 +11,12 @@ async fn main() {
     //set sleep_duration to 1 second
     let sleep_duration = time::Duration::from_millis(1000);
 
-    let people = get_people(&client).await;
-    println!("number of people: {:?}", people["number"].as_i64().unwrap());
+    let people = get_people(&client).await["number"].as_i64().unwrap();
+    println!("number of people: {}", people.to_string().green());
     while i > 0 {
         //get position
         pos = get_pos(&client).await;
-        println!("Latitude: {:?} Longitude: {:?}", pos["iss_position"]["latitude"].as_str().unwrap(), pos["iss_position"]["longitude"].as_str().unwrap());
+        println!("Latitude: {} Longitude: {}", pos["iss_position"]["latitude"].as_str().unwrap().green(), pos["iss_position"]["longitude"].as_str().unwrap().green());
         i-=1;
         //sleep for 1 second
         thread::sleep(sleep_duration);
@@ -39,18 +33,7 @@ async fn get_pos(client: &reqwest::Client) -> Value {
         .text()
         .await;
 
-    let output: Value;
-    match response {
-        Ok(json) => {
-            output = serde_json::from_str(&json).unwrap(); 
-        }
-        Err(e) => {
-            output = Value::Null;
-            println!("{:?}", e);
-        }
-    }
-
-    return output;
+    return match_response(response);
 
 }
 
@@ -62,6 +45,11 @@ async fn get_people(client: &reqwest::Client) -> Value {
         .text()
         .await;
 
+    return match_response(response);
+}
+
+//matches response Result
+fn match_response(response: Result<String, reqwest::Error>)-> Value {
     let output: Value;
     match response {
         Ok(json) => {
@@ -69,7 +57,7 @@ async fn get_people(client: &reqwest::Client) -> Value {
         }
         Err(e) => {
             output = Value::Null;
-            println!("{:?}", e);
+            println!("{}", e);
         }
     }
     return output;
