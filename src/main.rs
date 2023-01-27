@@ -7,17 +7,22 @@ use colored::*;
 async fn main() {
     let client = reqwest::Client::new();
     let mut pos: Value;
-    let mut i = 5;
     //set sleep_duration to 1 second
     let sleep_duration = time::Duration::from_millis(1000);
+    
+    println!("\n\n{}","========================================================".red());
+    println!("{}", "Welcome to Rust-ISS prec crtl + c any time to quit".red());
+    println!("{}","========================================================".red());
 
     let people = get_people(&client).await["number"].as_i64().unwrap();
-    println!("number of people: {}", people.to_string().green());
-    while i > 0 {
+
+    println!("{} {}", "number of people:".cyan(), people.to_string().green());
+    println!("{} {}", "people in space:".cyan(), get_people(&client).await["people"].to_string().yellow());
+
+    loop {
         //get position
         pos = get_pos(&client).await;
-        println!("Latitude: {} Longitude: {}", pos["iss_position"]["latitude"].as_str().unwrap().green(), pos["iss_position"]["longitude"].as_str().unwrap().green());
-        i-=1;
+        println!("{} {} {} {}", "Latitude:".cyan(), "Longitude:".cyan(), pos["iss_position"]["latitude"].as_str().unwrap().green(), pos["iss_position"]["longitude"].as_str().unwrap().green());
         //sleep for 1 second
         thread::sleep(sleep_duration);
     }
